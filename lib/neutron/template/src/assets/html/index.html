@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <!-- <script type="text/javascript" src="./connector.js"></script>
+    <script type="text/javascript">
+      const connector = new Connector()
+      connector.on('connect', () => {
+        console.log('Connetected to server');
+      })
+      connector.connect();
+    </script> -->
+  </head>
+  <body>
+    <h2>TEST</h2>
+    <button id='b'>YOLO</button>
+    <script>
+      document.getElementById('b').addEventListener('click', function(e) {
+        for(var i = 0; i < 10; i++){
+          connector.send('add', [0, i], true).then((result) => {
+            console.log(result)
+          }).catch((e) => {
+            console.log('ERROR', e)
+          })
+        }
+      });
+    </script>
+  </body>
+</html>
