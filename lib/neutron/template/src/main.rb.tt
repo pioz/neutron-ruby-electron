@@ -1,0 +1,10 @@
+<% if options[:development] -%>
+require 'bundler'
+Bundler.require
+<% end -%>
+
+require 'neutron/app'
+require './backend.rb'
+
+app = Neutron::App.new(controller: Backend.new)
+app.run

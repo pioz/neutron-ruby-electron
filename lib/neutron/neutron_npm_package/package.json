@@ -1,0 +1,23 @@
+{
+  "name": "neutron",
+  "version": "0.1.0",
+  "description": "Mini framework to build desktop app with Electron and Ruby",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pioz/neutron.git"
+  },
+  "keywords": [
+    "ruby",
+    "electron"
+  ],
+  "author": "pioz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pioz/neutron/issues"
+  },
+  "homepage": "https://github.com/pioz/neutron#readme"
+}

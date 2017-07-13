@@ -1,0 +1,20 @@
+<% if options[:jquery] || options[:bootstrap] -%>
+import jQuery from 'jquery'
+<% end -%>
+<% if options[:react] -%>
+import ReactDOM from 'react-dom'
+import React from 'react'
+import NeutronEntryPointComponent from './javascripts/components/neutron_entry_point_component'
+<% else -%>
+import neutron from 'neutron'
+<% end -%>
+<% if options[:jquery] || options[:bootstrap] -%>
+window.jQuery = window.$ = jQuery
+<% end -%>
+<% if options[:react] -%>
+window.ReactDOM = ReactDOM
+window.React = React
+window.NeutronEntryPointComponent = NeutronEntryPointComponent
+<% else -%>
+window.neutron = neutron
+<% end -%>

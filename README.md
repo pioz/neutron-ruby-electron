@@ -1,41 +1,125 @@
 # Neutron
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/neutron`. To experiment with that code, run `bin/console` for an interactive prompt.
+Neutron is a mini framework to build desktop app with [Electron](https://electron.atom.io/) and [Ruby](https://www.ruby-lang.org/).
+Neutron follow the pattern `MVC` where the `V` is handled by Electron and (if you want) [ReactJS](https://facebook.github.io/react/).
+The `MC` can be handled with pure Ruby code.
 
-TODO: Delete this and the text above, and describe your gem
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'neutron'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
+Install it yourself as:
 
     $ gem install neutron
 
+
 ## Usage
 
-TODO: Write usage instructions here
+First of all generate a new Neutron project:
 
-## Development
+    $ neutron project_name
 
-After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+It will generate a new folder with the follow tree
+```
+.
+├── LICENSE.txt
+├── README.md
+└── src
+    ├── Gemfile
+    ├── Gemfile.lock
+    ├── assets
+    │   ├── index.html
+    │   ├── javascripts
+    │   │   ├── components
+    │   │   │   └── neutron_entry_point_component.js
+    │   │   └── neutron.js
+    │   └── stylesheets
+    ├── backend.rb
+    ├── main.rb
+    ├── main_window.js
+    ├── node_modules/
+    └── package.json
+```
+You can run the just generated app with the command:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+    $ cd project_name/src
+    $ ruby main.rb
+
+- The `main.rb` is the main of your app.
+- The `main_window.js` is the Electron entry point file where the [Electron app](https://electron.atom.io/docs/api/app/) and the [main browser window](https://electron.atom.io/docs/api/browser-window/) are created.
+- The `backend.rb` is a Ruby class where you can add your instance methods that can be called from the view, from your React components of your Javascript code. This class extends `Neutron::Controller` and looks like this:
+```
+class MyController < Neutron::Controller
+  def ping
+    return 'pong'
+  end
+
+  def add(a, b)
+    return(a + b)
+  end
+end
+```
+- The `neutron_entry_point_component.js` is the main component that render all your application.
+
+
+### Communication between Electron and Ruby
+
+Inside a React component you can import the Neutron module with
+
+    import neutron from 'neutron'
+
+and use neutron to call a controller method like this:
+
+    neutron.send('method_name', [params], options).then((result) => {...}).catch((error) => {...})
+
+You can call a Ruby Controller method with `neutron.send` method that return a JS promise with the return value of the method or an error.
+
+For example you can have a component like this:
+```
+import React from 'react'
+import neutron from 'neutron'
+
+export default class Sum extends React.Component {
+
+  constructor(props) {
+    super(props)
+    this.state = {}
+  }
+
+  sum() {
+    const a = parseInt(this.a.value)
+    const b = parseInt(this.b.value)
+    neutron.send('add', [a, b]).then((result) => {
+      this.setState({result: result})
+    }).catch((error) => {
+      console.log(error)
+    })
+  }
+
+  render() {
+    return(
+      <div>
+        <p>
+          <input ref={(input) => this.a = input}/>
+          +
+          <input ref={(input) => this.b = input}/>
+          = {this.state.result}
+        </p>
+        <p>
+          <button onClick={this.sum.bind(this)}>Calculate</button>
+        </p>
+      </div>
+    )
+  }
+}
+```
+In this componenet the sum is calculated by the method `add` in the Ruby controller.
+
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/neutron.
+Bug reports and pull requests are welcome on GitHub at https://github.com/pioz/neutron.
 
 
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-

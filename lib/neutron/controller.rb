@@ -5,28 +5,25 @@ module Neutron
 
   Thread.abort_on_exception = true
 
-  class Backend < UNIXServer
+  class Controller < UNIXServer
 
-    def initialize(path)
+    def initialize(path = '/tmp/neutron.sock')
+      File.delete(path) if File.exists?(path)
+
       super(path)
       @path = path
       @run = true
 
       trap('INT') do
-        STDOUT.puts 'Stopping server...'
+        STDOUT.puts 'Closing socket...'
         self.stop
       end
     end
 
     def stop
       @run = false
-      @disconnect = true
       self.close
-      File.delete(@path)
-    end
-
-    def disconnect
-      @disconnect = true
+      File.delete(@path) if File.exists?(@path)
     end
 
     def run
@@ -34,11 +31,10 @@ module Neutron
         begin
           Thread.fork(self.accept) do |sock| # begin
             Thread.current[:threads] = {}
-            @disconnect = false
-            while (data = sock.gets) && !@disconnect
+            while (data = sock.gets)
               break if data.empty?
               data.chop!
-              STDOUT.puts data
+              # STDOUT.puts data
               Thread.fork(sock, data, Thread.current[:threads]) do |sock, data, threads|
                 Thread.current[:sock] = sock
                 Thread.current[:threads] = threads
@@ -48,12 +44,9 @@ module Neutron
                 end
               end
             end
-            if @disconnect
-              sock.close
-              break
-            end
           end
         rescue Errno::EBADF
+          # socket has been closed and server is waiting on socket.accept
         end
       end
     end
@@ -106,7 +99,7 @@ module Neutron
       end
       if jsonrpc['jsonrpc'] == '2.0'
         begin
-          result = run_method(jsonrpc['method'], jsonrpc['params'], jsonrpc['multi'])
+          result = run_method(jsonrpc['method'], jsonrpc['params'], once: jsonrpc['once'])
         rescue NoMethodError
           return {jsonrpc: '2.0', error: {code: METHOD_NOT_FOUND, message: 'Method not found'}, id: jsonrpc['id']}
         end
@@ -125,8 +118,8 @@ module Neutron
       end
     end
 
-    def run_method(method, params, multi)
-      unless multi
+    def run_method(method, params, once: true)
+      if once
         Thread.current[:threads][method.to_sym] ||= []
         Thread.current[:threads][method.to_sym].each do |t|
           if t.alive?

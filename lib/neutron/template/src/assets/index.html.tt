@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <script src='./javascripts/neutron.js'></script>
+<% if options[:bootstrap] -%>
+    <script src='../node_modules/bootstrap/dist/js/bootstrap.js'></script>
+    <link href='../node_modules/bootstrap/dist/css/bootstrap.css' rel='stylesheet'>
+<% end -%>
+  </head>
+  <body>
+<% if options[:react] -%>
+    <div id='react-entry-point'></div>
+    <script>
+      ReactDOM.render(React.createElement(NeutronEntryPointComponent, null), document.getElementById('react-entry-point'))
+    </script>
+<% else -%>
+    <div>
+      <h2>Welcome to NEUTRON</h2>
+      <p>
+        <button id='b'>Try Neutron</button>
+        <script>
+          document.getElementById('b').addEventListener('click', () => {
+            for(let i = 0; i < 10; i++)
+              neutron.send('add', [0, i], {once: false}).then(result => console.log(result)).catch(e => console.log(e))
+          })
+        </script>
+      </p>
+    </div>
+<% end -%>
+  </body>
+</html>

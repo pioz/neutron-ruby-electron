@@ -1,0 +1,22 @@
+import React from 'react'
+import neutron from 'neutron'
+
+export default class NeutronEntryPointComponent extends React.Component {
+
+  button_click() {
+    for(let i = 0; i < 10; i++)
+      neutron.send('add', [0, i], {once: false}).then(result => console.log(result)).catch(e => console.log(e))
+  }
+
+  render() {
+    return(
+      <div>
+        <h2>Welcome to NEUTRON</h2>
+        <p>
+          <button className='btn btn-default' onClick={this.button_click}>Try Neutron</button>
+        </p>
+      </div>
+    )
+  }
+
+}

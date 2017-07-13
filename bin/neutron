@@ -1,0 +1,47 @@
+# coding: utf-8
+lib = File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'neutron/version'
+require 'neutron/generator'
+require 'optparse'
+
+def parse_args(args)
+  options = {react: true, jquery: false, bootstrap: true, development: false, debug: false}
+  opt_parser = OptionParser.new do |opts|
+    opts.banner = "Usage: neutron [options] PROJECT_NAME"
+    opts.separator ''
+    opts.separator 'Options:'
+    opts.on('-r', '--[no-]react', 'Create a project with ReactJS support') do |opt|
+      options[:react] = opt
+    end
+    opts.on('-j', '--[no-]jquery', 'Create a project with jQuery support') do |opt|
+      options[:jquery] = opt
+    end
+    opts.on('-b', '--[no-]bootstrap', 'Create a project with Twitter Bootstrap support') do |opt|
+      options[:bootstrap] = opt
+    end
+    opts.on_tail('--dev-mode', 'Development mode') do |opt|
+      options[:development] = opt
+    end
+    opts.on_tail('-d', '--[no-]debug', 'Debug mode') do |opt|
+      options[:debug] = opt
+    end
+    opts.on_tail('-v', '--version', 'Print Neutron version') do
+      puts Neutron::VERSION
+      exit
+    end
+    opts.on_tail('-h', '--help', 'Help') do
+      puts opts
+      exit
+    end
+  end
+  opt_parser.parse!(args)
+  if args.size != 1
+    puts opt_parser.help
+    exit
+  end
+  options[:project_name] = args.first
+  return options
+end
+
+Neutron::Generator.new(parse_args(ARGV)).generate!

@@ -2,15 +2,18 @@ module Neutron
 
   class App
 
-    def initialize(backend, electron_entry_point_file = 'main_window.js')
-      @backend = backend
-      @electron_entry_point_file = electron_entry_point_file
+    def initialize(controller:)
+      raise 'Controller must be inherit from Neutron::Controller' unless controller.is_a?(::Neutron::Controller)
+      @controller = controller
     end
 
     def run
-      backend.run
-      `electron #{@electron_entry_point_file}`
-      backend.stop
+      Thread.new { @controller.run }
+      begin
+        `npm run boot`
+      ensure
+        @controller.stop
+      end
     end
 
   end

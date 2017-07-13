@@ -5,9 +5,9 @@ import url from 'url'
 let win = null
 
 function createWindow () {
-  win = new BrowserWindow({width: 800, height: 600})
+  win = new BrowserWindow({title: 'Another Neutron app', width: 800, height: 600})
   win.loadURL(url.format({
-    pathname: path.join(__dirname, 'index.html'),
+    pathname: path.join(__dirname, 'assets/index.html'),
     protocol: 'file:',
     slashes: true
   }))
