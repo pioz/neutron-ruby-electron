@@ -1,10 +1,7 @@
 <html>
   <head>
     <script src='./javascripts/neutron.js'></script>
-<% if options[:bootstrap] -%>
-    <script src='../node_modules/bootstrap/dist/js/bootstrap.js'></script>
-    <link href='../node_modules/bootstrap/dist/css/bootstrap.css' rel='stylesheet'>
-<% end -%>
+    <link href='./stylesheets/neutron.less' type='text/less' rel='stylesheet'>
   </head>
   <body>
 <% if options[:react] -%>

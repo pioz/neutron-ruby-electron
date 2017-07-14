@@ -1,0 +1,84 @@
+PACKAGE_NAME = 'ciccio'
+VERSION = '0.1.0'
+TRAVELING_RUBY_VERSION = '20150210-2.1.5'
+
+desc 'Package your app'
+task package: ['package:linux:x86', 'package:linux:x86_64', 'package:osx']
+
+namespace :package do
+  namespace :linux do
+    desc 'Package your app for Linux x86'
+    task :x86 => "packaging/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86.tar.gz" do
+      create_package('linux-x86')
+    end
+
+    desc 'Package your app for Linux x86_64'
+    task :x86_64 => "packaging/traveling-ruby-#{TRAVELING_RUBY_VERSION}-linux-x86_64.tar.gz" do
+      create_package('linux-x86_64')
+    end
+  end
+
+  desc 'Package your app for OS X'
+  task :osx do
+    create_package('osx')
+  end
+
+end
+
+def create_package(target)
+  package_dir = "#{PACKAGE_NAME}-#{VERSION}-#{target}"
+  sh "rm -rf #{package_dir}"
+  sh "rm -rf tmp/"
+  sh "mkdir -p #{package_dir}/lib/app"
+  sh "cp -r src/* #{package_dir}/lib/app/"
+  sh "mkdir #{package_dir}/lib/ruby"
+  sh "mkdir tmp"
+  download_runtime('osx')
+  sh "tar -xzf tmp/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/lib/ruby"
+  create_wrapper("#{package_dir}/ciccio")
+  bundle_install
+  sh "cp -pR tmp/vendor #{package_dir}/lib/"
+  sh "cp Gemfile Gemfile.lock #{package_dir}/lib/vendor/"
+  sh "mkdir #{package_dir}/lib/vendor/.bundle"
+  sh "cp tmp/bundler-config #{package_dir}/lib/vendor/.bundle/config"
+  if !ENV['DIR_ONLY']
+    sh "tar -czf #{package_dir}.tar.gz #{package_dir}"
+    sh "rm -rf #{package_dir}"
+  end
+  sh "rm -rf tmp/"
+end
+
+def download_runtime(target)
+  sh "cd tmp && curl -L -O --fail https://d6r77u77i8pq3.cloudfront.net/releases/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz"
+end
+
+def bundle_install
+  # if RUBY_VERSION !~ /^2\.1\./
+  #   abort "You can only 'bundle install' using Ruby 2.1, because that's what Traveling Ruby uses."
+  # end
+  sh "cp Gemfile Gemfile.lock tmp/"
+  Bundler.with_clean_env do
+    sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path ../vendor --without development'
+  end
+  sh "rm -f vendor/*/*/cache/*"
+end
+
+def create_wrapper(out)
+  wrapper = <<-WRAPPER
+    #!/bin/bash
+    set -e
+
+    # Figure out where this script is located.
+    SELFDIR="`dirname \"$0\"`"
+    SELFDIR="`cd \"$SELFDIR\" && pwd`"
+
+    # Tell Bundler where the Gemfile and gems are.
+    export BUNDLE_GEMFILE="$SELFDIR/lib/vendor/Gemfile"
+    unset BUNDLE_IGNORE_CONFIG
+
+    # Run the actual app using the bundled Ruby interpreter, with Bundler activated.
+    exec "$SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/app/main.rb"
+  WRAPPER
+  wrapper.gsub!(/^\s{4}/, '')
+  File.open(out, 'w') {|f| f << wrapper }
+end
