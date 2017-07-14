@@ -4,7 +4,7 @@ Bundler.require
 <% end -%>
 
 require 'neutron/app'
-require './backend.rb'
+require File.expand_path('../backend.rb', __FILE__)
 
 app = Neutron::App.new(controller: Backend.new)
 app.run

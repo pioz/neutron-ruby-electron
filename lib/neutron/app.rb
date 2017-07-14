@@ -8,9 +8,10 @@ module Neutron
     end
 
     def run
+      path = File.expand_path('..', caller[0].split(':').first)
       Thread.new { @controller.run }
       begin
-        `npm run boot`
+        `cd '#{path}' && npm run boot`
       ensure
         @controller.stop
       end
