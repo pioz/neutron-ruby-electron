@@ -1,6 +1,6 @@
 PACKAGE_NAME = 'ciccio'
 VERSION = '0.1.0'
-TRAVELING_RUBY_VERSION = '20150210-2.1.5'
+TRAVELING_RUBY_VERSION = '20150715-2.2.2'
 
 desc 'Package your app'
 task package: ['package:linux:x86', 'package:linux:x86_64', 'package:osx']
@@ -36,9 +36,10 @@ def create_package(target)
   download_runtime('osx')
   sh "tar -xzf tmp/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/lib/ruby"
   create_wrapper("#{package_dir}/ciccio")
+  sh "chmod 755 #{package_dir}/ciccio"
   bundle_install
   sh "cp -pR tmp/vendor #{package_dir}/lib/"
-  sh "cp Gemfile Gemfile.lock #{package_dir}/lib/vendor/"
+  sh "cp src/Gemfile src/Gemfile.lock #{package_dir}/lib/vendor/"
   sh "mkdir #{package_dir}/lib/vendor/.bundle"
   sh "cp tmp/bundler-config #{package_dir}/lib/vendor/.bundle/config"
   if !ENV['DIR_ONLY']
@@ -56,11 +57,19 @@ def bundle_install
   # if RUBY_VERSION !~ /^2\.1\./
   #   abort "You can only 'bundle install' using Ruby 2.1, because that's what Traveling Ruby uses."
   # end
-  sh "cp Gemfile Gemfile.lock tmp/"
+  sh "cp src/Gemfile src/Gemfile.lock tmp/"
   Bundler.with_clean_env do
-    sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path ../vendor --without development'
+    sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development'
+    #sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle package --all'
+    #sh 'cp tmp/vendor/cache/neutron tmp/vendor/ruby/2.1.0/gems/'
   end
-  sh "rm -f vendor/*/*/cache/*"
+  sh "rm -f tmp/vendor/*/*/cache/*"
+  bundle_config = <<-CONFIG
+    BUNDLE_PATH: .
+    BUNDLE_WITHOUT: development
+    BUNDLE_DISABLE_SHARED_GEMS: '1'
+  CONFIG
+  File.open('tmp/bundler-config', 'w') {|f| f << bundle_config.gsub(/^\s{4}/, '') }
 end
 
 def create_wrapper(out)
@@ -79,6 +88,5 @@ def create_wrapper(out)
     # Run the actual app using the bundled Ruby interpreter, with Bundler activated.
     exec "$SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/app/main.rb"
   WRAPPER
-  wrapper.gsub!(/^\s{4}/, '')
-  File.open(out, 'w') {|f| f << wrapper }
+  File.open(out, 'w') {|f| f << wrapper.gsub(/^\s{4}/, '') }
 end
