@@ -10,10 +10,9 @@ module Neutron
 
   class Generator < Thor::Group
     include Thor::Actions
-    argument :name
 
     def initialize(options)
-      super([options[:project_name] || 'neutron'])
+      super()
       @options = options
     end
 
@@ -27,25 +26,22 @@ module Neutron
     end
 
     def copy_template
-      directory(TEMPLATE_PATH, name, exclude_pattern: /Gemfile|components/)
+      directory(TEMPLATE_PATH, options[:path], exclude_pattern: /components/)
       if options[:react]
-        directory(File.join(TEMPLATE_PATH, 'src/assets/javascripts/components'), File.join(name, 'src/assets/javascripts/components'))
+        directory(File.join(TEMPLATE_PATH, 'src/assets/javascripts/components'), File.join(options[:path], 'src/assets/javascripts/components'))
       end
-      if options[:development]
-        copy_file(File.join(TEMPLATE_PATH, 'src/Gemfile'), File.join(name, 'src/Gemfile'))
-        inside(File.join(name, 'src')) do
-          system 'bundle install'
-        end
+      inside(File.join(options[:path], 'src')) do
+        system 'bundle install'
       end
     end
 
     def generate_package_json
-      say_status :generate, File.join(name, 'src', 'package.json')
-      inside(File.join(name, 'src')) do
+      say_status :generate, File.join(options[:path], 'src', 'package.json')
+      inside(File.join(options[:path], 'src')) do
         # Init NPM
         `npm init -y`
         # Install local neutron npm package
-        system "npm install #{NEUTRON_NPM_PACKAGE_PATH}"
+        system "npm install --save-dev #{NEUTRON_NPM_PACKAGE_PATH}"
         # Install NPM packages
         %w(electron electron-prebuilt-compile).each do |package|
           system "npm install --save-dev #{package}"
@@ -63,9 +59,9 @@ module Neutron
         # Edit package.json
         username = Etc.getlogin.downcase
         json = JSON.parse(File.read('package.json'))
-        json['name'] = name
+        json['name'] = options[:name]
         json['description'] = 'Another Neutron app'
-        json['repository'] = "https://github.com/#{username}/#{name}"
+        json['repository'] = "https://github.com/#{username}/#{options[:name]}"
         json['author'] = username
         json['license'] = 'MIT'
         json['main'] = 'main_window.js'

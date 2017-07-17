@@ -1,8 +1,9 @@
 <% if options[:development] -%>
 require 'bundler'
+ENV['BUNDLE_GEMFILE'] = File.expand_path('../Gemfile', __FILE__)
 Bundler.require
-<% end -%>
 
+<% end -%>
 require 'neutron/app'
 require File.expand_path('../backend.rb', __FILE__)
 

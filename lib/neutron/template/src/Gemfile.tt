@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+<% if options[:development] -%>
+gem 'neutron', path: '<%= File.expand_path('..', __FILE__) %>'
+<% else -%>
+gem 'neutron'
+<% end -%>

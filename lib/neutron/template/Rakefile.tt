@@ -1,6 +1,9 @@
-PACKAGE_NAME = 'ciccio'
+require 'bundler'
+
+PACKAGE_NAME = '<%= options[:name] %>'
 VERSION = '0.1.0'
-TRAVELING_RUBY_VERSION = '20150715-2.2.2'
+RUBY_V = '2.2'
+TRAVELING_RUBY_VERSION = "20150715-#{RUBY_V}.2"
 
 desc 'Package your app'
 task package: ['package:linux:x86', 'package:linux:x86_64', 'package:osx']
@@ -26,17 +29,19 @@ namespace :package do
 end
 
 def create_package(target)
+  if RUBY_VERSION !~ /^#{RUBY_V}\./
+    abort "You can only use Ruby #{RUBY_V}, because that's what Traveling Ruby uses."
+  end
   package_dir = "#{PACKAGE_NAME}-#{VERSION}-#{target}"
   sh "rm -rf #{package_dir}"
   sh "rm -rf tmp/"
-  sh "mkdir -p #{package_dir}/lib/app"
-  sh "cp -r src/* #{package_dir}/lib/app/"
-  sh "mkdir #{package_dir}/lib/ruby"
   sh "mkdir tmp"
+  sh "mkdir -p #{package_dir}/lib/ruby"
+  sh "rsync -a src #{package_dir}/lib"
   download_runtime('osx')
   sh "tar -xzf tmp/traveling-ruby-#{TRAVELING_RUBY_VERSION}-#{target}.tar.gz -C #{package_dir}/lib/ruby"
-  create_wrapper("#{package_dir}/ciccio")
-  sh "chmod 755 #{package_dir}/ciccio"
+  create_wrapper("#{package_dir}/#{PACKAGE_NAME}")
+  sh "chmod 755 #{package_dir}/#{PACKAGE_NAME}"
   bundle_install
   sh "cp -pR tmp/vendor #{package_dir}/lib/"
   sh "cp src/Gemfile src/Gemfile.lock #{package_dir}/lib/vendor/"
@@ -54,16 +59,16 @@ def download_runtime(target)
 end
 
 def bundle_install
-  # if RUBY_VERSION !~ /^2\.1\./
-  #   abort "You can only 'bundle install' using Ruby 2.1, because that's what Traveling Ruby uses."
-  # end
   sh "cp src/Gemfile src/Gemfile.lock tmp/"
   Bundler.with_clean_env do
-    sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development'
-    #sh 'cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle package --all'
-    #sh 'cp tmp/vendor/cache/neutron tmp/vendor/ruby/2.1.0/gems/'
+    sh "cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle install --path vendor --without development"
+<% if options[:development] -%>
+    sh "cd tmp && env BUNDLE_IGNORE_CONFIG=1 bundle package --all"
+    sh "mv tmp/vendor/cache/neutron tmp/vendor/ruby/#{RUBY_V}.0/gems"
+<% end -%>
   end
-  sh "rm -f tmp/vendor/*/*/cache/*"
+  sh "rm -rf tmp/vendor/cache"
+  sh "rm -rf tmp/vendor/ruby/#{RUBY_V}.0/cache"
   bundle_config = <<-CONFIG
     BUNDLE_PATH: .
     BUNDLE_WITHOUT: development
@@ -77,16 +82,13 @@ def create_wrapper(out)
     #!/bin/bash
     set -e
 
-    # Figure out where this script is located.
     SELFDIR="`dirname \"$0\"`"
     SELFDIR="`cd \"$SELFDIR\" && pwd`"
 
-    # Tell Bundler where the Gemfile and gems are.
     export BUNDLE_GEMFILE="$SELFDIR/lib/vendor/Gemfile"
     unset BUNDLE_IGNORE_CONFIG
 
-    # Run the actual app using the bundled Ruby interpreter, with Bundler activated.
-    exec "$SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/app/main.rb"
+    exec "$SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/src/main.rb"
   WRAPPER
   File.open(out, 'w') {|f| f << wrapper.gsub(/^\s{4}/, '') }
 end
