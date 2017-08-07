@@ -87,7 +87,7 @@ module Neutron
     private
 
     def send_string(sock, s)
-      while(s.length > 0)
+      while(s && s.length > 0)
         sent = sock.send(s, 0)
         s = s[sent..-1]
       end
