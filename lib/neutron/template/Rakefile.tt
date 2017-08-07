@@ -88,7 +88,7 @@ def create_wrapper(out)
     export BUNDLE_GEMFILE="$SELFDIR/lib/vendor/Gemfile"
     unset BUNDLE_IGNORE_CONFIG
 
-    exec "$SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/src/main.rb"
+    exec "NODE_ENV=production $SELFDIR/lib/ruby/bin/ruby" -rbundler/setup "$SELFDIR/lib/src/main.rb"
   WRAPPER
   File.open(out, 'w') {|f| f << wrapper.gsub(/^\s{4}/, '') }
 end

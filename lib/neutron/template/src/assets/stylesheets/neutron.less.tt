@@ -1,3 +1,4 @@
 <% if options[:bootstrap] -%>
 @import '../../node_modules/bootstrap/less/bootstrap.less';
+@icon-font-path: '../../node_modules/bootstrap/fonts/';
 <% end -%>

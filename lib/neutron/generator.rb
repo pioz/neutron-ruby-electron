@@ -66,6 +66,7 @@ module Neutron
         json['license'] = 'MIT'
         json['main'] = 'main_window.js'
         json['scripts']['boot'] = './node_modules/.bin/electron .'
+        json['scripts']['buildjs'] = 'NODE_ENV=production ./node_modules/.bin/electron-compile .'
         #json['babel'] = {'presets' => ['es2015']}
         File.open('package.json', 'w') {|f| f << json.to_json}
       end

@@ -51,10 +51,10 @@ module Neutron
       end
     end
 
-    def notify(event, result)
+    def notify(event, result = nil)
       if result.is_a?(Hash) && result[:error].is_a?(Hash)
-        result[:error][:code] ||= UNKNOWN_ERROR
-        result[:error][:message] ||= 'Unknown error'
+        result[:error][:code] ||= SERVER_ERROR
+        result[:error][:message] ||= 'Server error'
         response = {jsonrpc: '2.0', error: result[:error], event: event, id: -1}
       else
         response = {jsonrpc: '2.0', result: result, event: event, id: -1}
@@ -65,15 +65,18 @@ module Neutron
       end
     end
 
-    UNKNOWN_ERROR = -1
-    JSONRPC_INVALID_VERSION = -2
-    METHOD_NOT_FOUND = -3
-    PARSE_ERROR = -4
+    PARSE_ERROR = -32700
+    INVALID_REQUEST = -32600
+    METHOD_NOT_FOUND = -32601
+    INTERNAL_ERROR = -32603
+    SERVER_ERROR = -32000
 
     protected
 
     def run_thread(&block)
-      c = caller[0][/`.*'/][1..-2].to_sym
+      #c = caller[0][/`.*'/][1..-2].to_sym
+      callers = caller.map{|c| c[/`.*'/][1..-2].to_sym}
+      c = callers.select{|c| Thread.current[:threads].keys.include?(c)}.first
       sock = Thread.current[:sock]
       Thread.current[:threads][c] << Thread.fork do
         Thread.current[:sock] = sock
@@ -97,24 +100,28 @@ module Neutron
       rescue JSON::ParserError
         return {jsonrpc: '2.0', error: {code: PARSE_ERROR, message: 'Parse error'}, id: nil}
       end
-      if jsonrpc['jsonrpc'] == '2.0'
-        begin
-          result = run_method(jsonrpc['method'], jsonrpc['params'], once: jsonrpc['once'])
-        rescue NoMethodError
-          return {jsonrpc: '2.0', error: {code: METHOD_NOT_FOUND, message: 'Method not found'}, id: jsonrpc['id']}
-        end
-        return nil unless jsonrpc['id'].is_a?(Integer) # we have a notification request, do not reply
-        if result.is_a?(Hash) && result[:error].is_a?(Hash)
-          result[:error][:code] ||= UNKNOWN_ERROR
-          result[:error][:message] ||= 'Unknown error'
-          return {jsonrpc: '2.0', error: result[:error], event: jsonrpc['method'], id: jsonrpc['id']}
-        else
-          r = result.is_a?(Hash) && !result[:result].nil? ? result[:result] : result
-          # Reply with a non error result
-          return {jsonrpc: '2.0', result: r, event: jsonrpc['method'], id: jsonrpc['id']}
-        end
+      if jsonrpc['jsonrpc'] != '2.0' || !jsonrpc['id'].is_a?(Integer) || jsonrpc['id'] < 0
+        return {jsonrpc: '2.0', error: {code: INVALID_REQUEST, message: 'Invalid request'}, id: jsonrpc['id']}
+      end
+      if !self.respond_to?(jsonrpc['method'])
+        return {jsonrpc: '2.0', error: {code: METHOD_NOT_FOUND, message: 'Method not found'}, id: jsonrpc['id']}
+      end
+
+      # begin
+      #  result = run_method(jsonrpc['method'], jsonrpc['params'], once: jsonrpc['once'])
+      # rescue Exception => e
+      #   return {jsonrpc: '2.0', error: {code: INTERNAL_ERROR, message: e.message}, id: jsonrpc['id']}
+      # end
+      result = run_method(jsonrpc['method'], jsonrpc['params'], once: jsonrpc['once'])
+
+      if result.is_a?(Hash) && result[:error].is_a?(Hash)
+        result[:error][:code] ||= SERVER_ERROR
+        result[:error][:message] ||= 'Server error'
+        return {jsonrpc: '2.0', error: result[:error], event: jsonrpc['method'], id: jsonrpc['id']}
       else
-        return {jsonrpc: '2.0', error: {code: JSONRPC_INVALID_VERSION, message: 'JSON-RPC invalid version'}, id: jsonrpc['id']}
+        r = result.is_a?(Hash) && !result[:result].nil? ? result[:result] : result
+        # Reply with a non error result
+        return {jsonrpc: '2.0', result: r, event: jsonrpc['method'], id: jsonrpc['id']}
       end
     end
 
@@ -122,11 +129,8 @@ module Neutron
       if once
         Thread.current[:threads][method.to_sym] ||= []
         Thread.current[:threads][method.to_sym].each do |t|
-          if t.alive?
-            t.kill
-          else
-            Thread.current[:threads][method.to_sym].delete(t)
-          end
+          t.kill if t.alive?
+          Thread.current[:threads][method.to_sym].delete(t)
         end
         Thread.current[:threads][method.to_sym] << Thread.current
       end
