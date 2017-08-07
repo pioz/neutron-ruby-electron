@@ -2,14 +2,14 @@
 
 Neutron is a mini framework to build desktop app with [Electron](https://electron.atom.io/) and [Ruby](https://www.ruby-lang.org/).
 Neutron follow the pattern `MVC` where the `V` is handled by Electron and (if you want) [ReactJS](https://facebook.github.io/react/).
-The `MC` can be handled with pure Ruby code.
+The `MC` is handled with pure Ruby code.
 
 
 ## Installation
 
 Install it yourself as:
 
-    $ gem install neutron
+    $ gem install neutron-ruby-electron
 
 
 ## Usage
@@ -117,7 +117,7 @@ In this componenet the sum is calculated by the method `add` in the Ruby control
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/pioz/neutron.
+Bug reports and pull requests are welcome on GitHub at https://github.com/pioz/neutron-ruby-electron.
 
 
 ## License

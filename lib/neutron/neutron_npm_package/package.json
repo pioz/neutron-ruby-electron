@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pioz/neutron.git"
+    "url": "git+https://github.com/pioz/neutron-ruby-electron.git"
   },
   "keywords": [
     "ruby",
@@ -17,7 +17,7 @@
   "author": "pioz",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pioz/neutron/issues"
+    "url": "https://github.com/pioz/neutron-ruby-electron/issues"
   },
-  "homepage": "https://github.com/pioz/neutron#readme"
+  "homepage": "https://github.com/pioz/neutron-ruby-electron#readme"
 }
